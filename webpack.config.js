@@ -86,6 +86,11 @@ var options = {
       filename: "background.html",
       chunks: ["background"]
     }),
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, "src", "injectedTimerElement.html"),
+      filename: "injectedTimerElement.html",
+      chunks: ["injectedTimerElement"]
+    }),
     new WriteFilePlugin()
   ]
 };
