@@ -13,6 +13,7 @@ module.exports = {
     "semi": ["error", "always"],
   },
   "parserOptions": {
-      "sourceType": "module"
+      "sourceType": "module",
+      "ecmaVersion":  2017
   }
 };
