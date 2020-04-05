@@ -9,11 +9,7 @@ function $(id) {
 class MettingTimer {
   constructor() {
     this.$meetingTime = $("js-metting-time");
-    this.$meetingTime.addEventListener("change", () => this.updateMeetingTime());
-    this.restoreMeetingTime();
-
-    // this.$issueTime = $("js-issue-time");
-    // this.$issueTime.addEventListener("change", () => this.updateIssueTime());
+    this.$meetingTime.addEventListener("change", () => this.updateTimes());
 
     this.$playBtn = $("js-play");
     this.$playBtn.addEventListener("click", () => this.play());
@@ -24,24 +20,27 @@ class MettingTimer {
     this.$pauseBtn = $("js-pause");
     this.$pauseBtn.addEventListener("click", () => this.pause());
 
-    // this.$issueLoopBtn = $("js-loop");
-    // this.$issueLoopBtn.addEventListener("click", () => this.issueLloop());
+    this.$issueTime = $("js-issue-time");
+    this.$issueTime.addEventListener("change", () => this.updateTimes());
+
+    this.$issueLoopBtn = $("js-loop");
+    this.$issueLoopBtn.addEventListener("click", () => this.issueLloop());
+
+    this.restoreTimes();
   }
 
-  updateMeetingTime() {
-    localStorage.setMeetingTime(this.$meetingTime.value);
-  }
-
-  restoreMeetingTime() {
-    localStorage.getMeetingTime((meetingTime) => {
-      if (meetingTime) {
-        this.$meetingTime.value = meetingTime;
-      }
+  updateTimes() {
+    localStorage.updateTimes({
+      meetingTime: this.$meetingTime.value,
+      issueTime: this.$issueTime.value,
     });
   }
 
-  updateIssueTime() {
-    localStorage.setIssueTime(this.$issueTime.value);
+  restoreTimes() {
+    localStorage.getTimes().then((result) => {
+      this.$meetingTime.value = result.meetingTime;
+      this.$issueTime.value = result.issueTime;
+    });
   }
 
   play() {
@@ -60,6 +59,10 @@ class MettingTimer {
 
     this.$playBtn.style.display = "block";
     this.$stopBtn.style.display = "none";
+  }
+
+  issueLloop() {
+    localStorage.issueLloop();
   }
 
   resetMessageToView() {

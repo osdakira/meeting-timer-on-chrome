@@ -1,36 +1,73 @@
 class LocalStorage {
-  setMeetingTime(timeString) {
-    this.set("MeetingTime", timeString);
-  }
-  getMeetingTime(callback) {
-    this.get("MeetingTime", callback);
-  }
-
   playNow() {
-    this.set("play", Date.now());
+    this.set("meetingStartAt", Date.now());
+    this.set("issueStartAt", Date.now());
   }
   stop() {
-    this.set("play", null);
+    this.set("meetingStartAt", null);
+    this.set("issueStartAt", null);
   }
   isPlayed(callback) {
-    this.get("play", callback);
+    this.get("meetingStartAt", callback);
+  }
+
+  issueLloop() {
+    this.set("issueStartAt", Date.now());
+  }
+
+  updateTimes(times) {
+    this.setLocalStorage({
+      meetingTime: times.meetingTime,
+      issueTime: times.issueTime,
+    });
+  }
+
+  async getTimes() {
+    const result = await this.getLocalStorage();
+    return {
+      meetingTime: result["meetingTime"] ? result["meetingTime"] : "",
+      issueTime: result["issueTime"] ? result["issueTime"] : "",
+    };
   }
 
   async getRestTime() {
-    const startMilliseconds = await this.getLocalStorage("play");
-    if(!startMilliseconds) { return ""; }
+    const meetingStartMSec = await this.getLocalStorage("meetingStartAt");
+    const meetingTimeString = await this.getLocalStorage("meetingTime");
+    const restMeetingTime = this.calcRestEndMSec(meetingStartMSec, meetingTimeString);
 
-    const meetingTimeString = await this.getLocalStorage("MeetingTime");
-    if(!meetingTimeString) { return ""; }
+    const issueStartMSec = await this.getLocalStorage("issueStartAt");
+    const issueTimeString = await this.getLocalStorage("issueTime");
+    const restIssueTime = this.calcRestEndMSec(issueStartMSec, issueTimeString);
 
-    const hms = meetingTimeString.split(':');
+    return {
+      restMeetingTime: restMeetingTime.restTime,
+      restMeetingRatio: restMeetingTime.restRatio,
+      restIssueTime: restIssueTime.restTime,
+      restIssueRatio: restIssueTime.restRatio,
+    };
+  }
+
+  calcRestEndMSec(startMSec, timeString) {
+    if (!timeString) {
+      return {
+        restTime: "",
+        restRatio: 0,
+      };
+    }
+
+    const mSec = this.toMSec(timeString);
+    const endMSec = startMSec + mSec;
+    const restEndMSec = endMSec - Date.now();
+    return {
+      restTime: this.toHHMMSS(restEndMSec / 1000),
+      restRatio: (restEndMSec / mSec * 100),
+    };
+  }
+
+  toMSec(timeString) {
+    const hms = timeString.split(':');
     const seconds = (+hms[0]) * 60 * 60 + (+hms[1]) * 60 + (+hms[2]);
-    const milliSeconds = seconds * 1000;
-
-    const endMilliseconds = startMilliseconds + milliSeconds;
-
-    const restMilliseconds = endMilliseconds - Date.now();
-    return this.toHHMMSS(restMilliseconds / 1000);
+    return seconds * 1000;
   }
 
   toHHMMSS(sec) {
@@ -54,6 +91,12 @@ class LocalStorage {
   get(key, callback) {
     chrome.storage.local.get([key], (result) => {
       callback(result[key]);
+    });
+  }
+
+  setLocalStorage(obj) {
+    return new Promise((resolve) => {
+      chrome.storage.local.set(obj, () => resolve());
     });
   }
 
